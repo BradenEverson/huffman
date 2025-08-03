@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{
-        .name = "NAME",
+        .name = "huffman",
         .root_source_file = b.path("src/main.zig"),
         .target = b.graph.host,
     });
@@ -12,7 +12,7 @@ pub fn build(b: *std.Build) void {
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
 
-    const run_step = b.step("run", "Put a better description here");
+    const run_step = b.step("run", "Huffman encode some file");
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
