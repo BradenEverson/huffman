@@ -2,26 +2,11 @@
 
 const std = @import("std");
 
-const Ordering = enum {
+pub const Ordering = enum {
     Greater,
     Equal,
     Less,
 };
-
-pub fn cmp_frequencies(item1: u16, item2: u16) Ordering {
-    const signed1: i32 = @intCast(item1);
-    const signed2: i32 = @intCast(item2);
-
-    const diff: i32 = signed1 - signed2;
-
-    if (diff == 0) {
-        return .Equal;
-    } else if (diff < 0) {
-        return .Less;
-    } else {
-        return .Greater;
-    }
-}
 
 fn MinHeap(comptime t: type) type {
     return struct {
