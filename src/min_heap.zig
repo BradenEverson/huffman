@@ -107,7 +107,7 @@ pub fn MinHeap(comptime T: type) type {
             return ((2 * idx) + 2);
         }
 
-        pub fn get_min(self: *Self) T {
+        pub fn peek(self: *Self) T {
             return self.items[0];
         }
     };
@@ -139,7 +139,7 @@ test "insertion getting" {
     try heap.insert(5);
     try heap.insert(2);
 
-    const min = heap.get_min();
+    const min = heap.peek();
     try std.testing.expectEqual(2, min);
 }
 
