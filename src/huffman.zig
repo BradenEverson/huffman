@@ -141,15 +141,20 @@ pub const Huffman = struct {
         }
     }
 
-    pub fn encode(self: *Huffman, buf: []const u8, to: *std.ArrayList(u8)) !void {
+    pub fn encode(self: *Huffman, buf: []const u8, to: *std.ArrayList(u8)) !u32 {
+        var bits: u32 = 0;
         var bit_writer = BitWriter.init(to);
 
         for (buf) |byte| {
             const encoding = self.mappings.get(byte).?;
-            for (encoding.items) |bit| try bit_writer.write(bit);
+            for (encoding.items) |bit| {
+                try bit_writer.write(bit);
+                bits += 1;
+            }
         }
 
         try bit_writer.flush();
+        return bits;
     }
 
     pub fn deinit(self: *Huffman) void {
@@ -250,7 +255,8 @@ test "Encoding" {
     var encoded = std.ArrayList(u8).init(alloc);
     defer encoded.deinit();
 
-    try huffman.encode(msg, &encoded);
+    const written = try huffman.encode(msg, &encoded);
 
     try std.testing.expectEqualSlices(u8, &[_]u8{ 0b11001100, 0b00110011 }, encoded.items);
+    try std.testing.expectEqual(16, written);
 }
