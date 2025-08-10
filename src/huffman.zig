@@ -28,8 +28,22 @@ pub const HuffmanNode = struct {
     }
 };
 
-fn cmp_freq(a: FrequencyPair, b: FrequencyPair) bool {
+fn cmpFreq(a: FrequencyPair, b: FrequencyPair) bool {
     return a.freq > b.freq;
+}
+
+fn frequencyPairsFromSlice(data: []u8, al: *std.ArrayList(FrequencyPair)) !void {
+    var frequencies = [0]u8{0} ** 256;
+
+    for (data) |byte| {
+        frequencies[byte] += 1;
+    }
+
+    for (frequencies, 0..) |count, byte| {
+        if (count > 0) {
+            try al.append(.{ .byte = byte, .freq = count });
+        }
+    }
 }
 
 pub const Huffman = struct {
@@ -41,10 +55,17 @@ pub const Huffman = struct {
     }
 
     pub fn build(self: *Huffman, data: []u8) !void {
-        var min_heap = try MinHeap(FrequencyPair).init(self.alloc, cmp_freq);
+        var min_heap = try MinHeap(FrequencyPair).init(self.alloc, cmpFreq);
         defer min_heap.deinit();
 
-        _ = data;
+        var frequencies = std.ArrayList(FrequencyPair).init(self.alloc);
+        defer frequencies.deinit();
+
+        try frequencyPairsFromSlice(data, &frequencies);
+
+        for (frequencies) |freq| {
+            try min_heap.insert(freq);
+        }
     }
 
     pub fn deinit(self: *Huffman) void {

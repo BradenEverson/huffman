@@ -114,17 +114,17 @@ pub fn MinHeap(comptime T: type) type {
     };
 }
 
-fn cmp_u16(a: u16, b: u16) bool {
+fn cmpU16(a: u16, b: u16) bool {
     return a > b;
 }
 
 test "initialize" {
-    var heap = try MinHeap(u16).init(std.heap.page_allocator, cmp_u16);
+    var heap = try MinHeap(u16).init(std.heap.page_allocator, cmpU16);
     defer heap.deinit();
 }
 
 test "insert" {
-    var heap = try MinHeap(u16).init(std.heap.page_allocator, cmp_u16);
+    var heap = try MinHeap(u16).init(std.heap.page_allocator, cmpU16);
     defer heap.deinit();
     try heap.insert(10);
     try heap.insert(5);
@@ -134,7 +134,7 @@ test "insert" {
 }
 
 test "insertion getting" {
-    var heap = try MinHeap(u16).init(std.heap.page_allocator, cmp_u16);
+    var heap = try MinHeap(u16).init(std.heap.page_allocator, cmpU16);
     defer heap.deinit();
     try heap.insert(10);
     try heap.insert(5);
@@ -145,7 +145,7 @@ test "insertion getting" {
 }
 
 test "wus popping" {
-    var heap = try MinHeap(u16).init(std.heap.page_allocator, cmp_u16);
+    var heap = try MinHeap(u16).init(std.heap.page_allocator, cmpU16);
     defer heap.deinit();
     try heap.insert(10);
     try heap.insert(5);
