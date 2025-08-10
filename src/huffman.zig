@@ -81,10 +81,10 @@ test "Create huffman" {
 }
 
 test "Frequency map" {
-    const msg = [_]u8{ 'a', 'a', 'a', 'b', 'b', 'c' };
+    const msg = "abcaba";
     var al = std.ArrayList(FrequencyPair).init(std.heap.page_allocator);
     defer al.deinit();
 
-    try frequencyPairsFromSlice(&msg, &al);
+    try frequencyPairsFromSlice(msg, &al);
     try std.testing.expectEqualSlices(FrequencyPair, &[_]FrequencyPair{ .{ .byte = 'a', .freq = 3 }, .{ .byte = 'b', .freq = 2 }, .{ .byte = 'c', .freq = 1 } }, al.items);
 }
