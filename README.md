@@ -60,6 +60,13 @@ pub fn main() !void {
 }
 ```
 
+## Results:
+
+- All of Moby Dick:
+    - Original: 1,197,545 bytes
+    - Encoded: 827,447 bytes
+    - About 70% the original size :D
+
 ## Todos:
 
 - [ ] The current implementation uses an ArrayList(u1) for simplicity when getting instructions, this can obviously be optimized
