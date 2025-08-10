@@ -27,6 +27,39 @@ const huffman_dep = b.dependency("huffman", .{
 exe.root_module.addImport("huffman", huffman_dep.module("huffman"));
 ```
 
+3. Use it in your own projects like:
+
+```zig
+const std = @import("std");
+const Huffman = @import("huffman").Huffman;
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    const alloc = gpa.allocator();
+
+    const msg = "The quick brown fox really likes coding in Zig because it's kinda a goated language.";
+
+    var huffman = Huffman.init(alloc);
+    defer huffman.deinit();
+
+    try huffman.build(msg);
+
+    var encoded = std.ArrayList(u8).init(alloc);
+    defer encoded.deinit();
+
+    const written = try huffman.encode(msg, &encoded);
+
+    var decoded = std.ArrayList(u8).init(alloc);
+    defer decoded.deinit();
+
+    try huffman.decode(encoded.items, &decoded, written);
+
+    std.debug.print("{s}\n", .{decoded.items});
+}
+```
+
 ## Todos:
 
 - [ ] The current implementation uses an ArrayList(u1) for simplicity when getting instructions, this can obviously be optimized
