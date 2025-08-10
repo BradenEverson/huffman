@@ -31,6 +31,23 @@ pub fn MinHeap(comptime T: type) type {
             self.allocator.free(self.items);
         }
 
+        pub fn pop(self: *Self) ?T {
+            if (self.items.len == 0) {
+                return null;
+            }
+
+            const size = self.size;
+            const last_elem = self.items[size - 1];
+
+            const min = self.items[0];
+            self.items[0] = last_elem;
+
+            self.size -= 1;
+
+            self.heapify(0);
+            return min;
+        }
+
         pub fn insert(self: *Self, elem: T) !void {
             if (self.size == self.capacity) {
                 self.capacity *= 2;
@@ -124,4 +141,22 @@ test "insertion getting" {
 
     const min = heap.get_min();
     try std.testing.expectEqual(2, min);
+}
+
+test "wus popping" {
+    var heap = try MinHeap(u16).init(std.heap.page_allocator, cmp_u16);
+    defer heap.deinit();
+    try heap.insert(10);
+    try heap.insert(5);
+    try heap.insert(2);
+
+    var min = heap.pop();
+    try std.testing.expectEqual(2, min);
+
+    min = heap.pop();
+    try std.testing.expectEqual(5, min);
+
+    min = heap.pop();
+    try std.testing.expectEqual(10, min);
+    try std.testing.expectEqual(0, heap.size);
 }
