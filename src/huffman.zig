@@ -199,8 +199,9 @@ test "More complex encoding" {
 
     try huffman.build(msg);
 
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 1, 0 }, huffman.mappings.get(' ').?.items);
     try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 0, 0 }, huffman.mappings.get('a').?.items);
-    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 0, 1, 1 }, huffman.mappings.get('Z').?.items);
     try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 1, 1 }, huffman.mappings.get('e').?.items);
     try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 0, 1, 0 }, huffman.mappings.get('b').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 0, 1, 1 }, huffman.mappings.get('Z').?.items);
 }
