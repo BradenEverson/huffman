@@ -28,10 +28,6 @@ pub const HuffmanNode = struct {
     }
 };
 
-fn cmpFreq(a: FrequencyPair, b: FrequencyPair) bool {
-    return a.freq > b.freq;
-}
-
 fn cmpNodes(a: *HuffmanNode, b: *HuffmanNode) bool {
     return a.frequency > b.frequency;
 }
@@ -54,8 +50,14 @@ pub const Huffman = struct {
     root: ?*HuffmanNode,
     alloc: std.mem.Allocator,
 
+    /// An ArrayList of bits isn't the best thing ever for performance, but it is the easiest.
+    /// So for now I'll keep it simple and unoptimal, and then later on we can do
+    /// some of that crazy bit manipulation stuff (worst case for the huffman tree is 255 branchs, but
+    /// maybe we can assume balance (or enforce it) to only need 8 max bits for an instruction).
+    mappings: std.AutoHashMap(u8, std.ArrayList(u1)),
+
     pub fn init(alloc: std.mem.Allocator) Huffman {
-        return Huffman{ .alloc = alloc, .root = null };
+        return Huffman{ .alloc = alloc, .root = null, .mappings = std.AutoHashMap(u8, std.ArrayList(u1)).init(alloc) };
     }
 
     pub fn build(self: *Huffman, data: []const u8) !void {
@@ -109,6 +111,32 @@ pub const Huffman = struct {
             }
 
             self.root = min_heap.pop();
+
+            if (self.root) |r| {
+                try self.createMappings(r, std.ArrayList(u1).init(self.alloc));
+            }
+        }
+    }
+
+    fn createMappings(self: *Huffman, node: *HuffmanNode, working_al: std.ArrayList(u1)) !void {
+        if (node.val) |leaf| {
+            try self.mappings.put(leaf, working_al);
+        } else {
+            defer working_al.deinit();
+
+            if (node.left) |left| {
+                var left_al = try working_al.clone();
+                try left_al.append(0);
+
+                try self.createMappings(left, left_al);
+            }
+
+            if (node.right) |right| {
+                var right_al = try working_al.clone();
+                try right_al.append(1);
+
+                try self.createMappings(right, right_al);
+            }
         }
     }
 
@@ -117,6 +145,8 @@ pub const Huffman = struct {
             root.deinit(self.alloc);
             self.alloc.destroy(root);
         }
+
+        self.mappings.deinit();
     }
 };
 
@@ -145,4 +175,8 @@ test "Build a huffman" {
     const immediate_left = huffman.root.?.left.?;
 
     try std.testing.expectEqual('a', immediate_left.val.?);
+
+    try std.testing.expectEqualSlices(u1, &[_]u1{0}, huffman.mappings.get('a').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 1, 0 }, huffman.mappings.get('c').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 1, 1 }, huffman.mappings.get('b').?.items);
 }
