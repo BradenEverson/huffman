@@ -1,21 +1,20 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const exe = b.addExecutable(.{
-        .name = "huffman",
-        .root_source_file = b.path("src/main.zig"),
-        .target = b.graph.host,
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const huffman_mod = b.addModule("huffman", .{
+        .root_source_file = b.path("src/huffman.zig"),
+        .target = target,
+        .optimize = optimize,
     });
 
-    b.installArtifact(exe);
+    const unit_tests = b.addTest(.{
+        .root_module = huffman_mod,
+    });
 
-    const run_cmd = b.addRunArtifact(exe);
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    const run_step = b.step("run", "Huffman encode some file");
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
-
-    run_step.dependOn(&run_cmd.step);
+    const run_unit_tests = b.addRunArtifact(unit_tests);
+    const test_step = b.step("test", "Run the unit tests");
+    test_step.dependOn(&run_unit_tests.step);
 }
