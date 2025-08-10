@@ -32,8 +32,8 @@ fn cmpFreq(a: FrequencyPair, b: FrequencyPair) bool {
     return a.freq > b.freq;
 }
 
-fn frequencyPairsFromSlice(data: []u8, al: *std.ArrayList(FrequencyPair)) !void {
-    var frequencies = [0]u8{0} ** 256;
+fn frequencyPairsFromSlice(data: []const u8, al: *std.ArrayList(FrequencyPair)) !void {
+    var frequencies = [1]u8{0} ** 256;
 
     for (data) |byte| {
         frequencies[byte] += 1;
@@ -41,7 +41,7 @@ fn frequencyPairsFromSlice(data: []u8, al: *std.ArrayList(FrequencyPair)) !void 
 
     for (frequencies, 0..) |count, byte| {
         if (count > 0) {
-            try al.append(.{ .byte = byte, .freq = count });
+            try al.append(.{ .byte = @truncate(byte), .freq = count });
         }
     }
 }
@@ -78,4 +78,13 @@ pub const Huffman = struct {
 test "Create huffman" {
     var huffman = Huffman.init(std.heap.page_allocator);
     defer huffman.deinit();
+}
+
+test "Frequency map" {
+    const msg = [_]u8{ 'a', 'a', 'a', 'b', 'b', 'c' };
+    var al = std.ArrayList(FrequencyPair).init(std.heap.page_allocator);
+    defer al.deinit();
+
+    try frequencyPairsFromSlice(&msg, &al);
+    try std.testing.expectEqualSlices(FrequencyPair, &[_]FrequencyPair{ .{ .byte = 'a', .freq = 3 }, .{ .byte = 'b', .freq = 2 }, .{ .byte = 'c', .freq = 1 } }, al.items);
 }
