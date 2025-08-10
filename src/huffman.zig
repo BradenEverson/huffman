@@ -7,12 +7,12 @@ const BitWriter = @import("bit_writer.zig");
 
 pub const FrequencyPair = struct {
     byte: u8,
-    freq: u24,
+    freq: u56,
 };
 
 pub const HuffmanNode = struct {
     val: ?u8,
-    frequency: u24,
+    frequency: u56,
     left: ?*HuffmanNode,
     right: ?*HuffmanNode,
 
@@ -96,8 +96,8 @@ pub const Huffman = struct {
                 const left = min_heap.pop();
                 const right = min_heap.pop();
 
-                const left_freq: u24 = if (left) |l| l.frequency else 0;
-                const right_freq: u24 = if (right) |r| r.frequency else 0;
+                const left_freq: u56 = if (left) |l| l.frequency else 0;
+                const right_freq: u56 = if (right) |r| r.frequency else 0;
 
                 const parent = try self.alloc.create(HuffmanNode);
 
