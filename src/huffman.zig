@@ -9,24 +9,52 @@ pub const FrequencyPair = struct {
     freq: u24,
 };
 
+pub const HuffmanNode = struct {
+    val: ?u8,
+    frequency: u24,
+    left: ?*HuffmanNode,
+    right: ?*HuffmanNode,
+
+    pub fn deinit(self: *HuffmanNode, alloc: std.mem.Allocator) void {
+        if (self.left) |left| {
+            left.deinit(alloc);
+            alloc.destroy(left);
+        }
+
+        if (self.right) |right| {
+            right.deinit(alloc);
+            alloc.destroy(right);
+        }
+    }
+};
+
 fn cmp_freq(a: FrequencyPair, b: FrequencyPair) bool {
     return a.freq > b.freq;
 }
 
 pub const Huffman = struct {
-    table: MinHeap(FrequencyPair),
+    root: ?HuffmanNode,
     alloc: std.mem.Allocator,
 
-    pub fn init(alloc: std.mem.Allocator) !Huffman {
-        return Huffman{ .table = try MinHeap(FrequencyPair).init(alloc, cmp_freq), .alloc = alloc };
+    pub fn init(alloc: std.mem.Allocator) Huffman {
+        return Huffman{ .alloc = alloc, .root = null };
+    }
+
+    pub fn build(self: *Huffman, data: []u8) !void {
+        var min_heap = try MinHeap(FrequencyPair).init(self.alloc, cmp_freq);
+        defer min_heap.deinit();
+
+        _ = data;
     }
 
     pub fn deinit(self: *Huffman) void {
-        self.table.deinit();
+        if (self.root) |*root| {
+            root.deinit(self.alloc);
+        }
     }
 };
 
 test "Create huffman" {
-    var huffman = try Huffman.init(std.heap.page_allocator);
+    var huffman = Huffman.init(std.heap.page_allocator);
     defer huffman.deinit();
 }
