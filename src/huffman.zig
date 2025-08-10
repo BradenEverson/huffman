@@ -141,13 +141,15 @@ pub const Huffman = struct {
         }
     }
 
-    pub fn encode(self: *Huffman, buf: []const u8, to: *std.ArrayList(u8)) void {
+    pub fn encode(self: *Huffman, buf: []const u8, to: *std.ArrayList(u8)) !void {
         var bit_writer = BitWriter.init(to);
 
         for (buf) |byte| {
             const encoding = self.mappings.get(byte).?;
-            for (encoding) |bit| try bit_writer.write(bit);
+            for (encoding.items) |bit| try bit_writer.write(bit);
         }
+
+        try bit_writer.flush();
     }
 
     pub fn deinit(self: *Huffman) void {
@@ -238,16 +240,17 @@ test "Encoding" {
 
     const alloc = gpa.allocator();
 
-    const msg = "The quick brown fox really likes coding in Zig because it's kinda a goated language.";
+    const msg = "aabbaabbbbaabbaa";
 
     var huffman = Huffman.init(alloc);
     defer huffman.deinit();
 
     try huffman.build(msg);
 
-    try std.testing.expectEqualSlices(u1, &[_]u1{ 1, 0 }, huffman.mappings.get(' ').?.items);
-    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 0, 0 }, huffman.mappings.get('a').?.items);
-    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 1, 1 }, huffman.mappings.get('e').?.items);
-    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 0, 1, 0 }, huffman.mappings.get('b').?.items);
-    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 0, 1, 1 }, huffman.mappings.get('Z').?.items);
+    var encoded = std.ArrayList(u8).init(alloc);
+    defer encoded.deinit();
+
+    try huffman.encode(msg, &encoded);
+
+    try std.testing.expectEqualSlices(u8, &[_]u8{ 0b11001100, 0b00110011 }, encoded.items);
 }
