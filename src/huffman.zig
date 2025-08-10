@@ -157,6 +157,34 @@ pub const Huffman = struct {
         return bits;
     }
 
+    pub const DecodeError = error{ InvalidEncoding, NoRoot };
+
+    pub fn decode(self: *Huffman, from: []const u8, to: *std.ArrayList(u8), bits: u32) !void {
+        var bits_seen: u32 = 0;
+        var curr_node = if (self.root) |r| r else return DecodeError.NoRoot;
+
+        while (bits_seen < bits) {
+            // Decode bit-by-bit
+            const curr_byte = from[bits_seen / 8];
+            const curr_bit = (curr_byte >> @truncate(bits_seen % 8)) & 0x01;
+
+            if (curr_bit == 0) {
+                // Go left
+                curr_node = if (curr_node.left) |l| l else return DecodeError.InvalidEncoding;
+            } else {
+                // Go right
+                curr_node = if (curr_node.right) |r| r else return DecodeError.InvalidEncoding;
+            }
+
+            if (curr_node.val) |v| {
+                try to.append(v);
+                curr_node = if (self.root) |r| r else return DecodeError.NoRoot;
+            }
+
+            bits_seen += 1;
+        }
+    }
+
     pub fn deinit(self: *Huffman) void {
         if (self.root) |root| {
             root.deinit(self.alloc);
@@ -259,4 +287,25 @@ test "Encoding" {
 
     try std.testing.expectEqualSlices(u8, &[_]u8{ 0b11001100, 0b00110011 }, encoded.items);
     try std.testing.expectEqual(16, written);
+}
+
+test "Decoding" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    const alloc = gpa.allocator();
+
+    const msg = "aabbaabbbbaabbaa";
+
+    var huffman = Huffman.init(alloc);
+    defer huffman.deinit();
+
+    try huffman.build(msg);
+
+    var decoded = std.ArrayList(u8).init(alloc);
+    defer decoded.deinit();
+
+    try huffman.decode(&[_]u8{ 0b11001100, 0b00110011 }, &decoded, 16);
+
+    try std.testing.expectEqualSlices(u8, "aabbaabbbbaabbaa", decoded.items);
 }
