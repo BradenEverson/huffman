@@ -146,6 +146,11 @@ pub const Huffman = struct {
             self.alloc.destroy(root);
         }
 
+        var iter = self.mappings.valueIterator();
+        while (iter.next()) |val| {
+            val.deinit();
+        }
+
         self.mappings.deinit();
     }
 };
@@ -179,4 +184,23 @@ test "Build a huffman" {
     try std.testing.expectEqualSlices(u1, &[_]u1{0}, huffman.mappings.get('a').?.items);
     try std.testing.expectEqualSlices(u1, &[_]u1{ 1, 0 }, huffman.mappings.get('c').?.items);
     try std.testing.expectEqualSlices(u1, &[_]u1{ 1, 1 }, huffman.mappings.get('b').?.items);
+}
+
+test "More complex encoding" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    const alloc = gpa.allocator();
+
+    const msg = "The quick brown fox really likes coding in Zig because it's kinda a goated language.";
+
+    var huffman = Huffman.init(alloc);
+    defer huffman.deinit();
+
+    try huffman.build(msg);
+
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 0, 0 }, huffman.mappings.get('a').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 0, 1, 1 }, huffman.mappings.get('Z').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 1, 1 }, huffman.mappings.get('e').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 0, 1, 0 }, huffman.mappings.get('b').?.items);
 }
