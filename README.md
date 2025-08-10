@@ -1,8 +1,8 @@
-Huffman Encoding from Scratch
+# Huffman Encoding from Scratch
 
 A simple Min-Heap, Huffman Tree and Bit Writer implementation that allows for proper encoding and decoding of binary data :)
 
-# This repo provides:
+## This repo provides:
 
 - A min heap implementation from scratch (following https://www.digitalocean.com/community/tutorials/min-heap-binary-tree)
 - A Huffman tree encoding method that supports:
@@ -11,7 +11,7 @@ A simple Min-Heap, Huffman Tree and Bit Writer implementation that allows for pr
     - Decoding data according to that tree
 - A BitWriter used when encoding instructions
 
-# Usage:
+## Usage:
 
 1. Run this command:
 
@@ -27,7 +27,7 @@ const huffman_dep = b.dependency("huffman", .{
 exe.root_module.addImport("huffman", huffman_dep.module("huffman"));
 ```
 
-# Todos:
+## Todos:
 
 - [ ] The current implementation uses an ArrayList(u1) for simplicity when getting instructions, this can obviously be optimized
 - [ ] A form of serialization for the tree itself to send to the receiver alongside the data, as you need the tree to do the decoding.
