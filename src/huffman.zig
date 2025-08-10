@@ -32,6 +32,10 @@ fn cmpFreq(a: FrequencyPair, b: FrequencyPair) bool {
     return a.freq > b.freq;
 }
 
+fn cmpNodes(a: *HuffmanNode, b: *HuffmanNode) bool {
+    return a.frequency > b.frequency;
+}
+
 fn frequencyPairsFromSlice(data: []const u8, al: *std.ArrayList(FrequencyPair)) !void {
     var frequencies = [1]u8{0} ** 256;
 
@@ -47,15 +51,15 @@ fn frequencyPairsFromSlice(data: []const u8, al: *std.ArrayList(FrequencyPair)) 
 }
 
 pub const Huffman = struct {
-    root: ?HuffmanNode,
+    root: ?*HuffmanNode,
     alloc: std.mem.Allocator,
 
     pub fn init(alloc: std.mem.Allocator) Huffman {
         return Huffman{ .alloc = alloc, .root = null };
     }
 
-    pub fn build(self: *Huffman, data: []u8) !void {
-        var min_heap = try MinHeap(FrequencyPair).init(self.alloc, cmpFreq);
+    pub fn build(self: *Huffman, data: []const u8) !void {
+        var min_heap = try MinHeap(*HuffmanNode).init(self.alloc, cmpNodes);
         defer min_heap.deinit();
 
         var frequencies = std.ArrayList(FrequencyPair).init(self.alloc);
@@ -63,14 +67,55 @@ pub const Huffman = struct {
 
         try frequencyPairsFromSlice(data, &frequencies);
 
-        for (frequencies) |freq| {
-            try min_heap.insert(freq);
+        if (frequencies.items.len == 1) {
+            const node = try self.alloc.create(HuffmanNode);
+            node.* = .{
+                .val = frequencies.items[0].byte,
+                .frequency = frequencies.items[0].freq,
+                .left = null,
+                .right = null,
+            };
+
+            self.root = node;
+        } else {
+            for (frequencies.items) |freq| {
+                const node = try self.alloc.create(HuffmanNode);
+                node.* = .{
+                    .val = freq.byte,
+                    .frequency = freq.freq,
+                    .left = null,
+                    .right = null,
+                };
+                try min_heap.insert(node);
+            }
+
+            while (min_heap.size > 1) {
+                const left = min_heap.pop();
+                const right = min_heap.pop();
+
+                const left_freq: u24 = if (left) |l| l.frequency else 0;
+                const right_freq: u24 = if (right) |r| r.frequency else 0;
+
+                const parent = try self.alloc.create(HuffmanNode);
+
+                parent.* = .{
+                    .val = null,
+                    .frequency = left_freq + right_freq,
+                    .left = left,
+                    .right = right,
+                };
+
+                try min_heap.insert(parent);
+            }
+
+            self.root = min_heap.pop();
         }
     }
 
     pub fn deinit(self: *Huffman) void {
-        if (self.root) |*root| {
+        if (self.root) |root| {
             root.deinit(self.alloc);
+            self.alloc.destroy(root);
         }
     }
 };
@@ -87,4 +132,17 @@ test "Frequency map" {
 
     try frequencyPairsFromSlice(msg, &al);
     try std.testing.expectEqualSlices(FrequencyPair, &[_]FrequencyPair{ .{ .byte = 'a', .freq = 3 }, .{ .byte = 'b', .freq = 2 }, .{ .byte = 'c', .freq = 1 } }, al.items);
+}
+
+test "Build a huffman" {
+    const msg = "abcaba";
+
+    var huffman = Huffman.init(std.heap.page_allocator);
+    defer huffman.deinit();
+
+    try huffman.build(msg);
+
+    const immediate_left = huffman.root.?.left.?;
+
+    try std.testing.expectEqual('a', immediate_left.val.?);
 }
