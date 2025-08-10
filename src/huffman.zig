@@ -7,12 +7,12 @@ const BitWriter = @import("bit_writer.zig");
 
 pub const FrequencyPair = struct {
     byte: u8,
-    freq: u56,
+    freq: u24,
 };
 
 pub const HuffmanNode = struct {
     val: ?u8,
-    frequency: u56,
+    frequency: u24,
     left: ?*HuffmanNode,
     right: ?*HuffmanNode,
 
@@ -34,7 +34,7 @@ fn cmpNodes(a: *HuffmanNode, b: *HuffmanNode) bool {
 }
 
 fn frequencyPairsFromSlice(data: []const u8, al: *std.ArrayList(FrequencyPair)) !void {
-    var frequencies = [1]u8{0} ** 256;
+    var frequencies = [1]u24{0} ** 256;
 
     for (data) |byte| {
         frequencies[byte] += 1;
@@ -96,8 +96,8 @@ pub const Huffman = struct {
                 const left = min_heap.pop();
                 const right = min_heap.pop();
 
-                const left_freq: u56 = if (left) |l| l.frequency else 0;
-                const right_freq: u56 = if (right) |r| r.frequency else 0;
+                const left_freq: u24 = if (left) |l| l.frequency else 0;
+                const right_freq: u24 = if (right) |r| r.frequency else 0;
 
                 const parent = try self.alloc.create(HuffmanNode);
 
