@@ -3,6 +3,7 @@
 
 const std = @import("std");
 const MinHeap = @import("min_heap.zig").MinHeap;
+const BitWriter = @import("bit_writer.zig");
 
 pub const FrequencyPair = struct {
     byte: u8,
@@ -140,6 +141,15 @@ pub const Huffman = struct {
         }
     }
 
+    pub fn encode(self: *Huffman, buf: []const u8, to: *std.ArrayList(u8)) void {
+        var bit_writer = BitWriter.init(to);
+
+        for (buf) |byte| {
+            const encoding = self.mappings.get(byte).?;
+            for (encoding) |bit| try bit_writer.write(bit);
+        }
+    }
+
     pub fn deinit(self: *Huffman) void {
         if (self.root) |root| {
             root.deinit(self.alloc);
@@ -156,13 +166,24 @@ pub const Huffman = struct {
 };
 
 test "Create huffman" {
-    var huffman = Huffman.init(std.heap.page_allocator);
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    const alloc = gpa.allocator();
+
+    var huffman = Huffman.init(alloc);
     defer huffman.deinit();
 }
 
 test "Frequency map" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    const alloc = gpa.allocator();
+
     const msg = "abcaba";
-    var al = std.ArrayList(FrequencyPair).init(std.heap.page_allocator);
+
+    var al = std.ArrayList(FrequencyPair).init(alloc);
     defer al.deinit();
 
     try frequencyPairsFromSlice(msg, &al);
@@ -170,9 +191,14 @@ test "Frequency map" {
 }
 
 test "Build a huffman" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    const alloc = gpa.allocator();
+
     const msg = "abcaba";
 
-    var huffman = Huffman.init(std.heap.page_allocator);
+    var huffman = Huffman.init(alloc);
     defer huffman.deinit();
 
     try huffman.build(msg);
@@ -187,6 +213,26 @@ test "Build a huffman" {
 }
 
 test "More complex encoding" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    const alloc = gpa.allocator();
+
+    const msg = "The quick brown fox really likes coding in Zig because it's kinda a goated language.";
+
+    var huffman = Huffman.init(alloc);
+    defer huffman.deinit();
+
+    try huffman.build(msg);
+
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 1, 0 }, huffman.mappings.get(' ').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 0, 0 }, huffman.mappings.get('a').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 1, 1 }, huffman.mappings.get('e').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 0, 1, 0 }, huffman.mappings.get('b').?.items);
+    try std.testing.expectEqualSlices(u1, &[_]u1{ 0, 1, 1, 0, 1, 1 }, huffman.mappings.get('Z').?.items);
+}
+
+test "Encoding" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
 
