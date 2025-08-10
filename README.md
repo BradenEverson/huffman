@@ -17,13 +17,13 @@ A simple Min-Heap, Huffman Tree and Bit Writer implementation that allows for pr
 
 `zig fetch --save git+https://github.com/BradenEverson/huffman.git`
 
-2. Import hte module into build.zig:
+2. Import the module into build.zig:
 
 ```zig
 const huffman_dep = b.dependency("huffman", .{
     .target = target,
     .optimize = optimize,
-})
+});
 exe.root_module.addImport("huffman", huffman_dep.module("huffman"));
 ```
 
