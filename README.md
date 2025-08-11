@@ -15,7 +15,9 @@ A simple Min-Heap, Huffman Tree and Bit Writer implementation that allows for pr
 
 1. Run this command:
 
-`zig fetch --save git+https://github.com/BradenEverson/huffman.git`
+```
+zig fetch --save git+https://github.com/BradenEverson/huffman.git
+```
 
 2. Import the module into build.zig:
 
