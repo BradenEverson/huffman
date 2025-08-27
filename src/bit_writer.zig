@@ -1,14 +1,15 @@
 //! Abstraction for writing bits to a binary target
 
 const std = @import("std");
+const ArrayList = std.array_list.Managed;
 
-buffer: *std.ArrayList(u8),
+buffer: *ArrayList(u8),
 byte_buf: u8,
 curr_bit: u3,
 
 const BitWriter = @This();
 
-pub fn init(buffer: *std.ArrayList(u8)) BitWriter {
+pub fn init(buffer: *ArrayList(u8)) BitWriter {
     return BitWriter{
         .buffer = buffer,
         .byte_buf = 0,

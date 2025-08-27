@@ -2,7 +2,7 @@
     .name = .huffman,
     .version = "0.1.0",
 
-    .minimum_zig_version = "0.14.0",
+    .minimum_zig_version = "0.15.1",
 
     .fingerprint = 0xe00625768a9f8a32,
 

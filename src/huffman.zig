@@ -4,6 +4,7 @@
 const std = @import("std");
 const MinHeap = @import("min_heap.zig").MinHeap;
 const BitWriter = @import("bit_writer.zig");
+const ArrayList = std.array_list.Managed;
 
 pub const FrequencyPair = struct {
     byte: u8,
@@ -33,7 +34,7 @@ fn cmpNodes(a: *HuffmanNode, b: *HuffmanNode) bool {
     return a.frequency > b.frequency;
 }
 
-fn frequencyPairsFromSlice(data: []const u8, al: *std.ArrayList(FrequencyPair)) !void {
+fn frequencyPairsFromSlice(data: []const u8, al: *ArrayList(FrequencyPair)) !void {
     var frequencies = [1]u24{0} ** 256;
 
     for (data) |byte| {
@@ -55,17 +56,17 @@ pub const Huffman = struct {
     /// So for now I'll keep it simple and unoptimal, and then later on we can do
     /// some of that crazy bit manipulation stuff (worst case for the huffman tree is 255 branchs, but
     /// maybe we can assume balance (or enforce it) to only need 8 max bits for an instruction).
-    mappings: std.AutoHashMap(u8, std.ArrayList(u1)),
+    mappings: std.AutoHashMap(u8, ArrayList(u1)),
 
     pub fn init(alloc: std.mem.Allocator) Huffman {
-        return Huffman{ .alloc = alloc, .root = null, .mappings = std.AutoHashMap(u8, std.ArrayList(u1)).init(alloc) };
+        return Huffman{ .alloc = alloc, .root = null, .mappings = std.AutoHashMap(u8, ArrayList(u1)).init(alloc) };
     }
 
     pub fn build(self: *Huffman, data: []const u8) !void {
         var min_heap = try MinHeap(*HuffmanNode).init(self.alloc, cmpNodes);
         defer min_heap.deinit();
 
-        var frequencies = std.ArrayList(FrequencyPair).init(self.alloc);
+        var frequencies = ArrayList(FrequencyPair).init(self.alloc);
         defer frequencies.deinit();
 
         try frequencyPairsFromSlice(data, &frequencies);
@@ -114,12 +115,12 @@ pub const Huffman = struct {
             self.root = min_heap.pop();
 
             if (self.root) |r| {
-                try self.createMappings(r, std.ArrayList(u1).init(self.alloc));
+                try self.createMappings(r, ArrayList(u1).init(self.alloc));
             }
         }
     }
 
-    fn createMappings(self: *Huffman, node: *HuffmanNode, working_al: std.ArrayList(u1)) !void {
+    fn createMappings(self: *Huffman, node: *HuffmanNode, working_al: ArrayList(u1)) !void {
         if (node.val) |leaf| {
             try self.mappings.put(leaf, working_al);
         } else {
@@ -141,7 +142,7 @@ pub const Huffman = struct {
         }
     }
 
-    pub fn encode(self: *Huffman, buf: []const u8, to: *std.ArrayList(u8)) !u32 {
+    pub fn encode(self: *Huffman, buf: []const u8, to: *ArrayList(u8)) !u32 {
         var bits: u32 = 0;
         var bit_writer = BitWriter.init(to);
 
@@ -159,7 +160,7 @@ pub const Huffman = struct {
 
     pub const DecodeError = error{ InvalidEncoding, NoRoot };
 
-    pub fn decode(self: *Huffman, from: []const u8, to: *std.ArrayList(u8), bits: u32) !void {
+    pub fn decode(self: *Huffman, from: []const u8, to: *ArrayList(u8), bits: u32) !void {
         var bits_seen: u32 = 0;
         var curr_node = if (self.root) |r| r else return DecodeError.NoRoot;
 
@@ -218,7 +219,7 @@ test "Frequency map" {
 
     const msg = "abcaba";
 
-    var al = std.ArrayList(FrequencyPair).init(alloc);
+    var al = ArrayList(FrequencyPair).init(alloc);
     defer al.deinit();
 
     try frequencyPairsFromSlice(msg, &al);
@@ -280,7 +281,7 @@ test "Encoding" {
 
     try huffman.build(msg);
 
-    var encoded = std.ArrayList(u8).init(alloc);
+    var encoded = ArrayList(u8).init(alloc);
     defer encoded.deinit();
 
     const written = try huffman.encode(msg, &encoded);
@@ -302,7 +303,7 @@ test "Decoding" {
 
     try huffman.build(msg);
 
-    var decoded = std.ArrayList(u8).init(alloc);
+    var decoded = ArrayList(u8).init(alloc);
     defer decoded.deinit();
 
     try huffman.decode(&[_]u8{ 0b11001100, 0b00110011 }, &decoded, 16);
